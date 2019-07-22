@@ -2,51 +2,59 @@
 using System.Collections.Generic;
 using System.Text;
 
+/// <summary>
+/// Any object of some class can be replaced by an object of a child class
+/// </summary>
 namespace SOLIDSample.LSP
 {
+
     public class BadWay
     {
         public static class Main
         {
             public static void TestIt()
             {
-                IProduct movie = new Movie();
+                Product movie = new Movie();
                 movie.Price = 100;
-                var movieDiscount = movie.Discount();
+                var movieDiscount = movie.Discount(movie);
 
-                IProduct game = new Game();
+                Product game = new Game();
                 game.Price = 100;
                 //It will generate error
-                var gameDiscount = game.Discount();
+                var gameDiscount = game.Discount(game);
             }
 
         }
 
-        public interface IProduct
+        //Similar to OCP, but it has inheritance, Liskov works side by side with OCP
+        public class Product
         {
-            string Name { get; set; }
+            public string Name { get; set; }
 
-            string Category { get; set; }
+            public string Category { get; set; }
 
-            decimal Price { get; set; }
+            public decimal Price { get; set; }
 
-            decimal Discount();
-        }
-
-        public class Movie : IProduct
-        {
-            public override decimal Discount()
+            public decimal Discount(Product product)
             {
-                return (Price * 10) / 100;
+                if (product is Movie)
+                    return product.Price * 10;
+
+                if (product is Game)
+                    return product.Price * 20;
+
+                return 0;
             }
         }
 
-        public class Game : IProduct
+        public class Movie : Product
         {
-            public override decimal Discount()
-            {
-                throw new NotImplementedException();
-            }
+
+        }
+
+        public class Game : Product
+        {
+
         }
     }
 
@@ -56,15 +64,29 @@ namespace SOLIDSample.LSP
         {
             public static void TestIt()
             {
-                Product movie = new Movie();
-                movie.Price = 100;
+                //You'll be able to change class between movie and game, and it still working
+                IProductWithDiscount movie = new Movie() //Game()
+                {
+                    Price = 10
+                };
+
                 var movieDiscount = movie.Discount();
 
-                Product game = new Game();
-                game.Price = 100;
-                var gameDiscount = game.Discount();
-            }
+                IProductWithDiscount game = new Game() //Movie()
+                {
+                    Price = 20
+                };
 
+                var gameDiscount = game.Discount();
+
+                //Will not work
+                //IProductWithDiscount car = new Car()
+                //{
+                //    Price = 20
+                //};
+
+                //var carDiscount = game.Discount();
+            }
         }
 
         public abstract class Product
@@ -74,24 +96,32 @@ namespace SOLIDSample.LSP
             public string Category { get; set; }
 
             public decimal Price { get; set; }
-
-            public abstract decimal Discount();
         }
 
-        public class Movie : Product
+        public interface IProductWithDiscount
         {
-            public override decimal Discount()
+            decimal Discount();
+        }
+
+        public class Movie : Product, IProductWithDiscount
+        {
+            public decimal Discount()
             {
                 return (Price * 10) / 100;
             }
         }
 
-        public class Game : Product
+        public class Game : Product, IProductWithDiscount
         {
-            public override decimal Discount()
+            public decimal Discount()
             {
                 return (Price * 30) / 100;
             }
+        }
+
+        public class Car : Product
+        {
+
         }
     }
 }
